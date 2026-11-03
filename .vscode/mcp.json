@@ -1,0 +1,14 @@
+{
+  "servers": {
+    "codegraph": {
+      "type": "stdio",
+      "command": "codegraph",
+      "args": [
+        "serve",
+        "--mcp",
+        "--path",
+        "D:\\Kuliah\\joki\\Kerja Praktek Aqil\\kawan aqil\\projek"
+      ]
+    }
+  }
+}
