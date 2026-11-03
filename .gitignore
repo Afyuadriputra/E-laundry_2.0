@@ -1,4 +1,3 @@
-@'
 # =========================================
 # ENVIRONMENT & SECRETS
 # =========================================
@@ -91,4 +90,3 @@ Desktop.ini
 *.bak
 *.backup
 *.old
-'@ | Set-Content -Path .gitignore -Encoding utf8
