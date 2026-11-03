@@ -1,0 +1,94 @@
+@'
+# =========================================
+# ENVIRONMENT & SECRETS
+# =========================================
+.env
+.env.*
+!.env.example
+!.env.sample
+!.env.template
+
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.sample
+!**/.env.template
+
+*.pem
+*.key
+*.p12
+*.pfx
+
+# =========================================
+# CODEGRAPH
+# =========================================
+.codegraph/
+
+# =========================================
+# NODE.JS / FRONTEND
+# =========================================
+node_modules/
+.pnpm-store/
+.npm/
+
+dist/
+build/
+.next/
+.nuxt/
+.svelte-kit/
+.astro/
+.vercel/
+coverage/
+
+# =========================================
+# PYTHON / BACKEND
+# =========================================
+__pycache__/
+*.py[cod]
+
+.venv/
+venv/
+ENV/
+
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# =========================================
+# DATABASE TEMPORARY FILES
+# =========================================
+*.db-wal
+*.db-shm
+*.sqlite3-wal
+*.sqlite3-shm
+
+# =========================================
+# LOGS & TEMPORARY
+# =========================================
+*.log
+logs/
+tmp/
+temp/
+
+# =========================================
+# LOCAL AI AGENT STATE
+# =========================================
+.claude/settings.local.json
+
+# =========================================
+# IDE & OS
+# =========================================
+.idea/
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# =========================================
+# BACKUP
+# =========================================
+*.bak
+*.backup
+*.old
+'@ | Set-Content -Path .gitignore -Encoding utf8
