@@ -1,3 +1,5 @@
+# CLAUDE CODE DIRECTIVES & GUIDELINES
+
 <!-- CODEGRAPH_START -->
 ## CodeGraph
 
@@ -8,3 +10,6 @@ In repositories indexed by CodeGraph (a `.codegraph/` directory exists at the re
 
 If there is no `.codegraph/` directory, skip CodeGraph entirely — indexing is the user's decision.
 <!-- CODEGRAPH_END -->
+
+## Project Directives
+Please refer to the master instruction set in [AGENTS.md](../AGENTS.md) for complete engineering standards, skills mapping, testing protocols, security requirements, and architectural documentation references.
