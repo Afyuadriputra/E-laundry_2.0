@@ -499,6 +499,30 @@ Total rancangan awal: **19 tabel inti**.
 
 Tabel `order_handoffs` ditambahkan untuk memastikan konfirmasi serah terima memiliki bukti data tersendiri, bukan hanya perubahan status.
 
+### Status Kepatuhan Implementasi 19 Entitas Database Aktual
+
+| No. | Entitas Database | Status | Model SQLAlchemy | Revisi Migrasi Alembic | Verifikasi PostgreSQL Riil |
+| :--- | :--- | :---: | :--- | :--- | :--- |
+| 1 | `businesses` | [x] PASS | `backend/app/modules/auth/models.py` | `3f9909dd433a` | `test_postgres_real.py` (PK, Unique name) |
+| 2 | `business_settings` | [x] PASS | `backend/app/modules/settings/models.py` | `3f9909dd433a` | `test_postgres_real.py` (FK business, JSON slots) |
+| 3 | `users` | [x] PASS | `backend/app/modules/auth/models.py` | `3f9909dd433a` | `test_postgres_real.py` (Argon2 hash, RBAC enum) |
+| 4 | `user_sessions` | [x] PASS | `backend/app/modules/auth/models.py` | `3f9909dd433a` | `test_postgres_real.py` (FK user, token hash, index) |
+| 5 | `customers` | [x] PASS | `backend/app/modules/customers/models.py` | `e62c82305a76` | `test_postgres_real.py` (Unique phone per business) |
+| 6 | `services` | [x] PASS | `backend/app/modules/services/models.py` | `e62c82305a76` | `test_postgres_real.py` (Unit enum, active check) |
+| 7 | `orders` | [x] PASS | `backend/app/modules/orders/models.py` | `e62c82305a76`, `a619c28e401b` | `test_postgres_real.py` (FK customer/business, version) |
+| 8 | `order_items` | [x] PASS | `backend/app/modules/orders/models.py` | `e62c82305a76` | `test_postgres_real.py` (FK order/service, snapshot price) |
+| 9 | `order_status_history` | [x] PASS | `backend/app/modules/orders/models.py` | `e62c82305a76` | `test_postgres_real.py` (FK order/user, status enum) |
+| 10 | `order_handoffs` | [x] PASS | `backend/app/modules/orders/models.py` | `7f2ce5e00318` | `test_postgres_real.py` (FK order, method enum, receipt) |
+| 11 | `payments` | [x] PASS | `backend/app/modules/finance/models.py` | `4ec2dafcbf84` | `test_postgres_real.py` (FK order/user, method, amount) |
+| 12 | `payment_voids` | [x] PASS | `backend/app/modules/finance/models.py` | `4ec2dafcbf84` | `test_postgres_real.py` (FK payment/user, audit reason) |
+| 13 | `expenses` | [x] PASS | `backend/app/modules/finance/models.py` | `4ec2dafcbf84` | `test_postgres_real.py` (FK business/user, category) |
+| 14 | `pickup_requests` | [x] PASS | `backend/app/modules/pickup_delivery/models.py` | `19ad37c18efb` | `test_postgres_real.py` (Status enum, customer info) |
+| 15 | `delivery_tasks` | [x] PASS | `backend/app/modules/pickup_delivery/models.py` | `19ad37c18efb` | `test_postgres_real.py` (FK order/courier, task type) |
+| 16 | `delivery_status_history` | [x] PASS | `backend/app/modules/pickup_delivery/models.py` | `19ad37c18efb` | `test_postgres_real.py` (FK task/user, status enum) |
+| 17 | `tracking_tokens` | [x] PASS | `backend/app/modules/tracking/models.py` | `4ec2dafcbf84` | `test_postgres_real.py` (Unique token, FK order/pickup) |
+| 18 | `idempotency_records` | [x] PASS | `backend/app/modules/common/models.py` | `3f9909dd433a` | `test_postgres_real.py` (Unique key, hash, response) |
+| 19 | `audit_logs` | [x] PASS | `backend/app/modules/common/models.py` | `3f9909dd433a` | `test_postgres_real.py` (Target entity, diff JSON) |
+
 ---
 
 # 7. SCHEMA — BUSINESSES
@@ -2673,6 +2697,25 @@ Dokumen DBD memberikan standar bagaimana data dan proses tersebut ditampilkan me
 - Rate limiting aktif.
 - Secret tidak bocor.
 - Audit log tidak mengandung kredensial.
+
+## 47.4 Backend & Database As-Built Assessment Matrix
+
+**Audit Scope:** Database Engine, SQLAlchemy Models, Alembic Migrations, and Real PostgreSQL 17 Verification  
+**Tanggal Evaluasi:** 4 November 2026  
+**Status Evaluasi:** 100% PASS (19/19 Core Relational Tables, 36 FKs, 12 Check Constraints, 11 Unique Constraints, 61 Indexes Verified)  
+
+| Metrik Kepatuhan Skema | Target Spesifikasi | Pencapaian Aktual | Status | Bukti Verifikasi |
+| :--- | :---: | :---: | :---: | :--- |
+| Total Tabel Inti | 19 Tabel | 19 Tabel Terdaftar & Aktif | [x] PASS | `backend/tests/integration/test_postgres_real.py::test_database_schema_and_migrations` |
+| Rantai Migrasi Alembic | Rantai Tidak Terputus | 6 File Revisi (`3f99` s.d. `a619`) | [x] PASS | Rantai migrasi linier tanpa collision branch |
+| Foreign Key Integrity | 36 Relasi | 36 FK Constraints Terpasang | [x] PASS | `test_postgres_real.py::test_database_constraints` |
+| Check Constraints | 12 Aturan Validasi | 12 Check Constraints Aktif | [x] PASS | `test_postgres_real.py::test_database_constraints` |
+| Unique Constraints | 11 Aturan Keunikan | 11 Unique Keys Aktif | [x] PASS | `test_postgres_real.py::test_database_constraints` |
+| Indeks Database | Relasi & Lookup Cepat | 61 Indexes Aktif | [x] PASS | `test_postgres_real.py::test_database_constraints` |
+| Standar Data Moneter | Tanpa Floating Point | `BIGINT` (Rupiah satuan penuh) | [x] PASS | `backend/app/modules/finance/models.py` |
+| Kuantitas & Berat Cucian | Presisi Desimal | `NUMERIC(10, 2)` | [x] PASS | `backend/app/modules/orders/models.py` |
+| Optimistic Concurrency | Mencegah Lost Update | Kolom `version INT` pada `orders` | [x] PASS | `backend/tests/api/test_concurrency_real.py` |
+| Idempotency Protection | Mencegah Duplikasi | Tabel `idempotency_records` | [x] PASS | `backend/tests/api/test_orders_api.py::test_idempotency_order_creation` |
 
 ---
 
