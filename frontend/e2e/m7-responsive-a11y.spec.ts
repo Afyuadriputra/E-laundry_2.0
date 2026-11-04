@@ -139,7 +139,7 @@ test.describe('Milestone 7: Quality, Security, Responsive & Accessibility Harden
     const token = 'trk_mobile_test_token_123';
     await page.setViewportSize({ width: 360, height: 740 });
 
-    await page.route(new RegExp(`/api/v1/tracking/${token}$`), async (route) => {
+    await page.route(`**/api/v1/tracking/${token}*`, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
