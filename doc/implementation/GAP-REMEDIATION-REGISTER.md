@@ -13,10 +13,10 @@
 | Priority | Total Identified | Remediated | Blocked / External | Final Status |
 | :--- | :---: | :---: | :---: | :--- |
 | **P0 (Critical)** | 3 | 3 | 0 | **100% CLOSED** |
-| **P1 (High)** | 4 | 4 | 0 | **100% CLOSED** |
+| **P1 (High)** | 5 | 5 | 0 | **100% CLOSED** |
 | **P2 (Medium)** | 2 | 2 | 0 | **100% CLOSED** |
 | **P3 (Low)** | 0 | 0 | 0 | **N/A** |
-| **Total** | **9** | **9** | **0** | **ALL CLOSED** |
+| **Total** | **10** | **10** | **0** | **ALL CLOSED** |
 
 ---
 
@@ -265,14 +265,47 @@
 
 ---
 
+### GAP-10 (P1): Missing Cashier Handoff Interface for Direct Customer Pickup (`CUSTOMER_PICKUP`)
+- **Finding ID:** GAP-10
+- **Severity / Priority:** P1 — High (Core Operational Workflow Completeness)
+- **Requirement Reference:**
+  - `BSD.md` §16 (*Tabel 11: order_handoffs*) & §33.1 (*Customer Pickup Workflow*)
+  - `PRD.md` §5.5 (*Pelacakan Status & Eksekusi Operasional*)
+  - `IPD.md` Task M2-07 / M2-08 (*Order Status Progression & Invariants*)
+- **Root Cause:**
+  In the initial implementation, order transition from `READY` to `COMPLETED` and automatic `OrderHandoff` generation were only wired into the Courier Delivery flow (`/courier`). For direct customer pickup (`SELF_PICKUP`), the cashier interface in `order-detail-page.tsx` was left with an informational placeholder banner without an actionable button or modal, while `OrderService.transition_status` hardcoded `is_fully_paid = False`.
+- **Affected Modules:**
+  - `backend/app/modules/orders/schemas.py`
+  - `backend/app/modules/orders/service.py`
+  - `frontend/src/pages/orders/order-detail-page.tsx`
+  - `backend/tests/api/test_orders_api.py`
+- **Corrective Action Taken:**
+  1. Added `received_by_name: str | None` to `OrderStatusTransitionRequest` in [`backend/app/modules/orders/schemas.py`](file:///d:/Kuliah/joki/Kerja%20Praktek%20Aqil/kawan%20aqil/projek/backend/app/modules/orders/schemas.py).
+  2. In [`backend/app/modules/orders/service.py`](file:///d:/Kuliah/joki/Kerja%20Praktek%20Aqil/kawan%20aqil/projek/backend/app/modules/orders/service.py), integrated real-time payment balance evaluation via `calculate_payment_balance()` and automatic `OrderHandoff` creation (`CUSTOMER_PICKUP`) upon transitioning to `COMPLETED`.
+  3. In [`frontend/src/pages/orders/order-detail-page.tsx`](file:///d:/Kuliah/joki/Kerja%20Praktek%20Aqil/kawan%20aqil/projek/frontend/src/pages/orders/order-detail-page.tsx), added button **"7. Serah Terima & Selesai (COMPLETED)"** to the `READY` status card and built an interactive modal enforcing full payment before handoff confirmation.
+  4. Authored automated integration test `test_order_completion_customer_pickup_flow` in [`backend/tests/api/test_orders_api.py`](file:///d:/Kuliah/joki/Kerja%20Praktek%20Aqil/kawan%20aqil/projek/backend/tests/api/test_orders_api.py).
+- **Files Changed:**
+  - `backend/app/modules/orders/schemas.py`
+  - `backend/app/modules/orders/service.py`
+  - `frontend/src/pages/orders/order-detail-page.tsx`
+  - `backend/tests/api/test_orders_api.py`
+- **Test Evidence:**
+  - `backend/tests/api/test_orders_api.py::test_order_completion_customer_pickup_flow` PASSED.
+  - Full pytest suite (57 tests) passed cleanly.
+  - Frontend production build compiled cleanly in 1.42s.
+- **Status:** **CLOSED (VERIFIED)**
+
+---
+
 ## 3. Residual Risk & Verification Conclusion
 
-All nine identified findings (GAP-01 through GAP-09) have been definitively remediated, tested, and verified:
+All ten identified findings (GAP-01 through GAP-10) have been definitively remediated, tested, and verified:
 - **Architecture & Database:** The 19 core tables (BSD §6.1) are fully registered and migrated cleanly up to Alembic head `a619c28e401b` on PostgreSQL 17.
 - **Concurrency & Pessimistic Locking:** Verified under real concurrent transactions on PostgreSQL 17 with `SELECT FOR UPDATE` avoiding race conditions.
+- **Customer Pickup & Courier Delivery Handoffs:** Both handoff channels (`CUSTOMER_PICKUP` at cashier desk and `COURIER_DELIVERY` by courier) are fully functional, validated against payment status, and audited.
 - **Trust Boundaries & Privacy:** Public tracking is strictly read-only (PRD §5.7 #9); PII masking is validated; authentication and CSRF protections are verified.
 - **Automated Test Coverage:**
-  - **Pytest (Backend):** 56 tests passed, 0 failed.
+  - **Pytest (Backend):** 57 tests passed, 0 failed.
   - **PostgreSQL 17 Real Integration:** 7 dedicated database tests passed, 0 failed.
   - **Playwright Component/Mocked E2E:** 15 tests passed across 5 viewports, 0 failed.
   - **Playwright True Browser-to-Database E2E (Zero Mocks):** 4 full business flows passed against live FastAPI and PostgreSQL 17, 0 failed.
