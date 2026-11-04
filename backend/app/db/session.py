@@ -21,6 +21,17 @@ engine = create_engine(
     **engine_kwargs,
 )
 
+if settings.DATABASE_URL.startswith("sqlite"):
+    from sqlalchemy import event
+
+    @event.listens_for(engine, "connect")
+    def register_sqlite_functions(dbapi_connection: Any, connection_record: Any) -> None:
+        dbapi_connection.create_function(
+            "num_nonnulls",
+            -1,
+            lambda *args: sum(1 for a in args if a is not None),
+        )
+
 SessionLocal = sessionmaker(
     autocommit=False,
     autoflush=False,
