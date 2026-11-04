@@ -68,8 +68,8 @@
 | **TASK-M2-04** | Katalog Layanan Kiloan & Satuan | `services/router.py` | `test_services_api.py` | **PASS** |
 | **TASK-M2-05** | PricingEngine: Pembulatan 0.1 kg HALF_UP (DEC-01) | `orders/domain/pricing.py` | `test_pricing.py` | **PASS** |
 | **TASK-M2-06** | PricingEngine: Batas Minimal 3.0 kg (DEC-02) | `orders/domain/pricing.py` | `test_pricing.py` | **PASS** |
-| **TASK-M2-07** | State Machine Transisi Status Pesanan | `orders/domain/state_machine.py` | `test_order_state_machine.py` | **PASS** |
-| **TASK-M2-08** | Pembuatan Pesanan Kasir & Snapshot Harga | `orders/service.py` | `test_orders_api.py` | **PASS** |
+| **TASK-M2-07** | State Machine Transisi Status Pesanan | `orders/domain/state_machine.py` | `test_order_state_machine.py`, `test_orders_api.py` | **PASS** |
+| **TASK-M2-08** | Pembuatan Pesanan Kasir, Snapshot & Serah Terima Kasir | `orders/service.py` | `test_orders_api.py` | **PASS** |
 | **TASK-M2-09** | Optimistic Locking Versi Record Pesanan | `orders/service.py` | `test_orders_api.py` | **PASS** |
 | **TASK-M2-10** | Form Kasir Responsif & Kalkulasi Live | `pages/orders/create-order-page.tsx` | `real-browser-e2e.spec.ts::Flow 1` | **PASS** |
 | **TASK-M2-11** | Detail Pesanan & Kontrol Transisi Status | `pages/orders/order-detail-page.tsx` | `real-browser-e2e.spec.ts::Flow 1` | **PASS** |
