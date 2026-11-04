@@ -202,3 +202,129 @@ def test_order_full_lifecycle_and_invariants(client: TestClient, db_session: Ses
     assert cancelled_order["operational_status"] == "CANCELLED"
     assert cancelled_order["cancelled_at"] is not None
     assert "pindah domisili" in cancelled_order["cancellation_reason"]
+
+
+def test_order_completion_customer_pickup_flow(client: TestClient, db_session: Session):
+    """Verify BSD.md §33.1: Customer Pickup completion with payment check and order handoff."""
+    business_id = uuid.uuid4()
+    business = Business(
+        id=business_id,
+        name="Laundry Express Barokah",
+        phone_e164="+6281200009999",
+        address="Jl. Melati 12",
+        timezone="Asia/Jakarta",
+        is_active=True,
+    )
+    settings = BusinessSettings(
+        id=uuid.uuid4(),
+        business_id=business_id,
+        pickup_enabled=True,
+        delivery_enabled=True,
+    )
+    db_session.add(business)
+    db_session.add(settings)
+
+    cashier = User(
+        id=uuid.uuid4(),
+        business_id=business_id,
+        username="kasir_ani",
+        full_name="Ani Wijaya",
+        password_hash=hash_password("KasirAni123!"),
+        role=UserRole.CASHIER,
+        is_active=True,
+    )
+    customer = Customer(
+        id=uuid.uuid4(),
+        business_id=business_id,
+        full_name="Pak Budi Santoso",
+        phone_e164="+6281298765432",
+        is_active=True,
+    )
+    service = Service(
+        id=uuid.uuid4(),
+        business_id=business_id,
+        name="Cuci Lipat Reguler",
+        pricing_type="PER_KG",
+        unit="KG",
+        unit_price=8000,
+        estimated_hours=24,
+        requires_ironing=False,
+        is_active=True,
+        version=1,
+    )
+    db_session.add(cashier)
+    db_session.add(customer)
+    db_session.add(service)
+    db_session.commit()
+
+    headers = _login(client, "kasir_ani", "KasirAni123!")
+
+    # 1. Create Order (3.0 kg kiloan = 24,000)
+    create_res = client.post(
+        "/api/v1/orders",
+        json={
+            "customer_id": str(customer.id),
+            "items": [{"service_id": str(service.id), "quantity": "3.0"}],
+            "intake_method": "DROP_OFF",
+            "return_method": "SELF_PICKUP",
+        },
+        headers=headers,
+    )
+    assert create_res.status_code == 200
+    order = create_res.json()["data"]
+    order_id = order["id"]
+    version = order["version"]
+    assert order["total_amount"] == 24000
+
+    # 2. Advance to READY: QUEUED -> WASHING -> DRYING -> QC_PACKING -> READY
+    for status in ["QUEUED", "WASHING", "DRYING", "QC_PACKING", "READY"]:
+        res = client.post(
+            f"/api/v1/orders/{order_id}/transition",
+            json={"to_status": status, "expected_version": version},
+            headers=headers,
+        )
+        assert res.status_code == 200
+        version = res.json()["data"]["version"]
+
+    # 3. Try to complete while unpaid -> rejected with 422
+    fail_res = client.post(
+        f"/api/v1/orders/{order_id}/transition",
+        json={
+            "to_status": "COMPLETED",
+            "expected_version": version,
+            "received_by_name": "Pak Budi",
+        },
+        headers=headers,
+    )
+    assert fail_res.status_code == 422
+
+    # 4. Pay in full via /api/v1/orders/{order_id}/payments
+    pay_res = client.post(
+        f"/api/v1/orders/{order_id}/payments",
+        json={
+            "amount": 24000,
+            "method": "CASH",
+            "reference_note": "Pelunasan kasir",
+        },
+        headers={**headers, "Idempotency-Key": str(uuid.uuid4())},
+    )
+    assert pay_res.status_code == 200
+
+    # 5. Transition to COMPLETED with handoff recipient name
+    complete_res = client.post(
+        f"/api/v1/orders/{order_id}/transition",
+        json={
+            "to_status": "COMPLETED",
+            "expected_version": version,
+            "received_by_name": "Pak Budi Santoso (Pemilik)",
+            "reason": "Serah terima pakaian langsung di kasir",
+        },
+        headers=headers,
+    )
+    assert complete_res.status_code == 200
+    completed = complete_res.json()["data"]
+    assert completed["operational_status"] == "COMPLETED"
+    assert completed["completed_at"] is not None
+    assert completed["handoff"] is not None
+    assert completed["handoff"]["handoff_method"] == "CUSTOMER_PICKUP"
+    assert completed["handoff"]["received_by_name"] == "Pak Budi Santoso (Pemilik)"
