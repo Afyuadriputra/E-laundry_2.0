@@ -75,7 +75,7 @@ def test_reports_reconciliation_and_lifecycle(client: TestClient, db_session: Se
         operational_status="WASHING",
         intake_method="DROP_OFF",
         return_method="SELF_PICKUP",
-        created_at=now - timedelta(hours=2),
+        created_at=now - timedelta(minutes=45),
         estimated_completion_at=now + timedelta(hours=10),
         subtotal_amount=50000,
         total_amount=50000,
@@ -98,7 +98,7 @@ def test_reports_reconciliation_and_lifecycle(client: TestClient, db_session: Se
         verified_by=cashier.id,
         amount=30000,
         method="CASH",
-        created_at=now - timedelta(hours=2),
+        created_at=now - timedelta(minutes=40),
     )
 
     # Order 2: Overdue (estimated_completion_at was 5 hours ago), Total 30.000, Unpaid
@@ -111,7 +111,7 @@ def test_reports_reconciliation_and_lifecycle(client: TestClient, db_session: Se
         operational_status="DRYING",
         intake_method="DROP_OFF",
         return_method="SELF_PICKUP",
-        created_at=now - timedelta(hours=12),
+        created_at=now - timedelta(minutes=35),
         estimated_completion_at=now - timedelta(hours=5),
         subtotal_amount=30000,
         total_amount=30000,
@@ -127,7 +127,7 @@ def test_reports_reconciliation_and_lifecycle(client: TestClient, db_session: Se
         operational_status="CANCELLED",
         intake_method="DROP_OFF",
         return_method="SELF_PICKUP",
-        created_at=now - timedelta(hours=1),
+        created_at=now - timedelta(minutes=25),
         estimated_completion_at=now + timedelta(hours=24),
         subtotal_amount=100000,
         total_amount=100000,
@@ -143,7 +143,7 @@ def test_reports_reconciliation_and_lifecycle(client: TestClient, db_session: Se
         operational_status="READY",
         intake_method="DROP_OFF",
         return_method="SELF_PICKUP",
-        created_at=now - timedelta(hours=8),
+        created_at=now - timedelta(minutes=20),
         estimated_completion_at=now + timedelta(hours=2),
         subtotal_amount=25000,
         total_amount=25000,
@@ -154,7 +154,7 @@ def test_reports_reconciliation_and_lifecycle(client: TestClient, db_session: Se
         verified_by=cashier.id,
         amount=25000,
         method="QRIS",
-        created_at=now - timedelta(hours=7),
+        created_at=now - timedelta(minutes=15),
     )
 
     # Voided Payment (Should be strictly excluded from cash received)
@@ -164,7 +164,7 @@ def test_reports_reconciliation_and_lifecycle(client: TestClient, db_session: Se
         verified_by=cashier.id,
         amount=20000,
         method="TRANSFER",
-        created_at=now - timedelta(hours=1),
+        created_at=now - timedelta(minutes=10),
     )
     void_record = PaymentVoid(
         id=uuid.uuid4(),
