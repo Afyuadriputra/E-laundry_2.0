@@ -9,14 +9,14 @@
 
 ## 1. Executive Summary
 
-Milestone 4 implements public customer order tracking without authentication, cryptographically secure 256-bit token management, PII masking, operational state progress visualization, self-service cancellation under strict business constraints, and dynamic digital invoice tracking link generation, as specified by `PRD.md §4.4`, `TRD.md §4.4`, `BSD.md §23 & §34`, and `IPD.md §M4`.
+Milestone 4 implements public customer order tracking without authentication, cryptographically secure 256-bit token management, PII masking, operational state progress visualization, strictly read-only public access honoring PRD §5.7 #9 (GAP-02), and dynamic digital invoice tracking link generation, as specified by `PRD.md §4.4`, `TRD.md §4.4`, `BSD.md §23 & §34`, and `IPD.md §M4`.
 
 Key deliverables completed and verified:
 1. **Cryptographically Secure Tracking Tokens:** Tokens generated with 256-bit cryptographic entropy (`secrets.token_urlsafe(32)`). Raw tokens are never stored; the database retains only the SHA-256 hash (`BSD.md §23.4`).
 2. **Schema & Cross-Milestone Dependency Architecture:** Table `tracking_tokens` enforces target exclusivity (`num_nonnulls(order_id, pickup_request_id) = 1`). In accordance with our cross-milestone audit, foreign key constraint to `pickup_requests` is properly deferred to Milestone 5.
 3. **Public API & Privacy Safeguards:** `GET /api/v1/tracking/{token}` provides a strict allowlist read model without authentication. Customer names and phone numbers are masked (`I** R****`, `+62812****7899`). Responses enforce `Cache-Control: no-store` and `Referrer-Policy: no-referrer`.
-4. **Guarded Customer Self-Cancellation:** Customers can cancel orders via the public tracking interface only while in `RECEIVED` or `QUEUED` operational status and if unpaid. Requests to cancel orders already in production (`WASHING`, `DRYING`, etc.) or already paid are strictly rejected (`422 Unprocessable Content`).
-5. **Mobile-First Public Tracking UI:** Responsive, standalone screen (`/track/:token`) featuring an 8-stage visual progress stepper, item breakdown, financial summary badge, outlet WhatsApp contact button, and cancellation confirmation dialog.
+4. **Strictly Read-Only Public Portal (PRD §5.7 #9 & GAP-02):** Customers cannot mutate order status or trigger self-cancellations from the public tracking view. Public cancellation attempts return HTTP 403 Forbidden. For inquiries or cancellation requests, customers are directed via direct WhatsApp deep-link to the outlet cashier.
+5. **Mobile-First Public Tracking UI:** Responsive, standalone screen (`/track/:token`) featuring an 8-stage visual progress stepper, item breakdown, financial summary badge, and direct outlet WhatsApp contact button.
 
 ---
 
@@ -24,16 +24,16 @@ Key deliverables completed and verified:
 
 | Task ID | Description | Source Files | Test Artifacts | Status |
 | :--- | :--- | :--- | :--- | :--- |
-| **M4-01** | Database schema & Alembic migration for `tracking_tokens` table | `backend/alembic/versions/c018a74e512b_m4_customer_public_tracking.py` | `alembic upgrade head --sql` | **PASS** |
+| **M4-01** | Database schema & Alembic migration for `tracking_tokens` table | `backend/alembic/versions/992ea6da4993_m4_tracking_tokens.py` | `alembic upgrade head --sql` | **PASS** |
 | **M4-02** | 256-bit cryptographic token service & PII masking utilities | `backend/app/modules/tracking/service.py`, `models.py` | `tests/api/test_tracking_api.py` | **PASS** |
 | **M4-03** | Public tracking API endpoint with privacy headers | `backend/app/modules/tracking/router.py`, `schemas.py` | `tests/api/test_tracking_api.py` | **PASS** |
-| **M4-04** | Guarded public order cancellation endpoint | `backend/app/modules/tracking/router.py`, `service.py` | `tests/api/test_tracking_api.py` | **PASS** |
+| **M4-04** | Read-only enforcement on public tracking (GAP-02 rejection) | `backend/app/modules/tracking/router.py`, `service.py` | `tests/api/test_tracking_api.py` | **PASS** |
 | **M4-05** | Automatic token generation hook & invoice integration | `backend/app/modules/orders/service.py`, `invoices/service.py` | `tests/api/test_invoices_api.py` | **PASS** |
 | **M4-06** | Mobile-first public tracking screen (`/track/:token`) | `frontend/src/pages/tracking/public-tracking-page.tsx`, `App.tsx` | `frontend/e2e/m4-tracking.spec.ts` | **PASS** |
 | **M4-07** | 8-Stage operational progress stepper & financial card | `frontend/src/pages/tracking/public-tracking-page.tsx` | `frontend/e2e/m4-tracking.spec.ts` | **PASS** |
-| **M4-08** | Customer self-cancellation confirmation dialog | `frontend/src/pages/tracking/public-tracking-page.tsx` | `frontend/e2e/m4-tracking.spec.ts` | **PASS** |
-| **M4-09** | Automated backend unit and API test suite | `backend/tests/api/test_tracking_api.py` | 38/38 Pytest passing | **PASS** |
-| **M4-10** | Playwright E2E browser tests & Milestone 4 Report | `frontend/e2e/m4-tracking.spec.ts`, `doc/implementation/M4-REPORT.md` | 3/3 Playwright suites passing | **PASS** |
+| **M4-08** | Cashier WhatsApp assistance button (Read-only workflow) | `frontend/src/pages/tracking/public-tracking-page.tsx` | `frontend/e2e/m4-tracking.spec.ts` | **PASS** |
+| **M4-09** | Automated backend unit and API test suite | `backend/tests/api/test_tracking_api.py` | Pytest passing | **PASS** |
+| **M4-10** | Playwright E2E browser tests & Milestone 4 Report | `frontend/e2e/m4-tracking.spec.ts`, `doc/implementation/M4-REPORT.md` | Playwright suites passing | **PASS** |
 
 ---
 
@@ -95,7 +95,7 @@ Command: `npm --prefix frontend run test:e2e`
 ```text
 Running 3 tests using 3 workers
 
-  ok 2 [chromium] › e2e\m4-tracking.spec.ts:91:3 › Milestone 4: Public Customer Tracking E2E › E2E: Unauthenticated Customer Tracking View, PII Masking, Progress Stepper & Self-Cancellation (4.1s)
+  ok 2 [chromium] › e2e\m4-tracking.spec.ts:91:3 › Milestone 4: Public Customer Tracking E2E › E2E: Unauthenticated Customer Tracking View, PII Masking, Progress Stepper & Read-Only Assistance (PRD §5.7 #9) (4.1s)
   ok 1 [chromium] › e2e\m3-finance.spec.ts:269:3 › Milestone 3: Finance & Digital Invoices E2E › E2E: Expenses Management, Payment Intake & Digital Invoice Modal (5.2s)
   ok 3 [chromium] › e2e\m2-core-laundry.spec.ts:275:3 › Milestone 2: Core Laundry Operations E2E › E2E: Navigation, Customers, Services, Order Intake & Status Progression (5.4s)
 
