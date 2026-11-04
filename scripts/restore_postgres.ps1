@@ -14,6 +14,13 @@ param (
 if (-not $DbName) { $DbName = "elaundry_db" }
 if (-not $DbUser) { $DbUser = "elaundry_user" }
 
+# Ensure PostgreSQL binary path is available on Windows if not on default PATH
+if (-not (Get-Command psql -ErrorAction SilentlyContinue)) {
+    if (Test-Path "C:\Program Files\PostgreSQL\17\bin\psql.exe") {
+        $env:PATH = "C:\Program Files\PostgreSQL\17\bin;$env:PATH"
+    }
+}
+
 if (-not (Test-Path $BackupFile)) {
     Write-Host "[ERROR] Backup file not found: $BackupFile" -ForegroundColor Red
     exit 1
