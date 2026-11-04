@@ -16,6 +16,13 @@ param (
 if (-not $DbName) { $DbName = "elaundry_db" }
 if (-not $DbUser) { $DbUser = "elaundry_user" }
 
+# Ensure PostgreSQL binary path is available on Windows if not on default PATH
+if (-not (Get-Command pg_dump -ErrorAction SilentlyContinue)) {
+    if (Test-Path "C:\Program Files\PostgreSQL\17\bin\pg_dump.exe") {
+        $env:PATH = "C:\Program Files\PostgreSQL\17\bin;$env:PATH"
+    }
+}
+
 $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
 if (-not (Test-Path $BackupDir)) {
     New-Item -ItemType Directory -Path $BackupDir -Force | Out-Null
