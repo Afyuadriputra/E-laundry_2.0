@@ -296,9 +296,9 @@ export const CreateOrderPage: React.FC<CreateOrderPageProps> = ({ onBack, onSucc
             <button
               type="button"
               onClick={handleAddItem}
-              className="inline-flex items-center gap-1 text-xs font-semibold text-teal-700 hover:text-teal-800"
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-teal-700 hover:text-teal-800 hover:bg-teal-50 rounded-xl min-h-[44px] transition-colors"
             >
-              <Plus className="w-3.5 h-3.5" />
+              <Plus className="w-4 h-4" />
               <span>Tambah Item</span>
             </button>
           </div>
