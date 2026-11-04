@@ -13,11 +13,12 @@ from app.modules.customers.service import CustomerService
 from app.modules.orders.domain.invariants import validate_completion_time
 from app.modules.orders.domain.pricing import PricingEngine
 from app.modules.orders.domain.state_machine import OperationalStatus, OrderStateMachine
-from app.modules.orders.models import Order, OrderItem, OrderStatusHistory
+from app.modules.orders.models import Order, OrderHandoff, OrderItem, OrderStatusHistory
 from app.modules.orders.schemas import (
     OrderCreate,
     OrderStatusTransitionRequest,
 )
+from app.modules.payments.domain.balance import PaymentStatus, calculate_payment_balance
 from app.modules.services.models import Service
 
 
@@ -195,6 +196,7 @@ class OrderService:
                 joinedload(Order.items),
                 joinedload(Order.status_history),
                 joinedload(Order.handoff),
+                joinedload(Order.payments),
             )
             .where(
                 Order.id == order_id,
@@ -272,8 +274,35 @@ class OrderService:
         # Check if any item in order requires ironing
         requires_ironing = any(item.requires_ironing_snapshot for item in order.items)
         has_handoff = order.handoff is not None
-        # Payment verification: in M2, default false for completing order without handoff/payment
+
+        # Payment verification: compute actual balance from payments (BSD.md §33 & §18.4)
         is_fully_paid = False
+        if order.payments:
+            balance = calculate_payment_balance(order.total_amount, order.payments)
+            is_fully_paid = balance.payment_status == PaymentStatus.PAID
+        elif order.total_amount == 0:
+            is_fully_paid = True
+
+        now = datetime.now(UTC)
+
+        # If transitioning to COMPLETED and no handoff exists yet,
+        # create customer pickup handoff if payment is valid (BSD.md §33.1)
+        if request.to_status == OperationalStatus.COMPLETED and not has_handoff:
+            if is_fully_paid:
+                handoff = OrderHandoff(
+                    order_id=order.id,
+                    delivery_task_id=None,
+                    handoff_method="CUSTOMER_PICKUP",
+                    received_by_name=request.received_by_name
+                    or (order.customer.full_name if order.customer else "Pelanggan"),
+                    confirmed_by_user_id=user_id,
+                    confirmed_at=now,
+                    notes=request.reason or "Pengambilan langsung di outlet",
+                )
+                db.add(handoff)
+                db.flush()
+                order.handoff = handoff
+                has_handoff = True
 
         OrderStateMachine.validate_transition(
             from_status=order.operational_status,
@@ -284,7 +313,6 @@ class OrderService:
             cancellation_reason=request.cancellation_reason,
         )
 
-        now = datetime.now(UTC)
         old_status = order.operational_status
         new_status = request.to_status.value
 
@@ -306,6 +334,16 @@ class OrderService:
             )
         elif new_status == OperationalStatus.COMPLETED.value:
             order.completed_at = now
+            AuditService.record(
+                db=db,
+                action="ORDER_COMPLETED",
+                resource_type="order",
+                actor_user_id=user_id,
+                resource_id=order.id,
+                before_data={"status": old_status},
+                after_data={"status": new_status},
+                reason=request.reason or "Pesanan diserahkan kepada pelanggan",
+            )
 
         history = OrderStatusHistory(
             order_id=order.id,
