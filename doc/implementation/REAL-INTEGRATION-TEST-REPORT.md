@@ -5,13 +5,13 @@
 **Auditor Roles:** QA Automation Lead, Senior Backend Engineer, Senior Frontend Engineer  
 **Document Baselines:** TRD.md §8, BSD.md §26–§35, IPD.md Acceptance Gates  
 **Result Summary:**  
-- **Backend Test Suite (pytest):** 56 Passed, 0 Failed (100% Pass Rate in 20.10s)  
+- **Backend Test Suite (pytest):** 57 Passed, 0 Failed (100% Pass Rate in 25.60s)  
 - **PostgreSQL 17 Dedicated Integration Suite:** 7 Passed, 0 Failed (100% Pass Rate in 1.55s)  
 - **True Browser-to-Database E2E (Zero Mocks):** 4 Flows Passed, 0 Failed (100% Pass Rate in 10.7s)  
 - **Frontend Component/Viewport E2E Suite (Playwright):** 15 Passed, 0 Failed (100% Pass Rate in 22.7s)  
 - **Code Linter (Ruff):** 0 Errors, 0 Warnings  
 - **Frontend Linter (ESLint):** 0 Errors, 0 Warnings  
-- **Frontend Build (Vite/TypeScript):** Clean production bundle generated in 1.53s  
+- **Frontend Build (Vite/TypeScript):** Clean production bundle generated in 1.42s  
 
 ---
 
@@ -26,7 +26,7 @@
 | **Test DB Engine (In-Memory)** | SQLite 3 (Foreign Keys & Types Emulated for Fast Units) | Fully Functional Fixtures |
 | **True Browser E2E Tool** | Playwright v1.50+ (Chromium -> React -> FastAPI -> Postgres) | Verified (4 flows passed) |
 | **Component E2E Tool** | Playwright v1.50+ (Chromium Engine, Viewport Matrix) | Verified (15 tests passed) |
-| **Backend Test Tool** | Pytest 9.2.0, AnyIO, Starlette TestClient | Verified (56 tests passed) |
+| **Backend Test Tool** | Pytest 9.2.0, AnyIO, Starlette TestClient | Verified (57 tests passed) |
 | **Host Container Runtime** | Docker Engine / Docker Compose CLI | **NOT INSTALLED ON HOST PATH** (`BLOCKED_NO_DOCKER_CLI`) |
 
 ---
@@ -98,7 +98,7 @@ To ensure absolute scientific honesty per `task/task5.md` guidelines, all execut
 
 ---
 
-## 4. Pytest Test Results (56 Tests Passed)
+## 4. Pytest Test Results (57 Tests Passed)
 
 Command: `backend/.venv/Scripts/pytest -v`
 
@@ -106,7 +106,7 @@ Command: `backend/.venv/Scripts/pytest -v`
 ============================= test session starts =============================
 platform win32 -- Python 3.12.0, pytest-9.2.0, pluggy-1.7.0
 plugins: anyio-4.16.0, cov-7.1.0
-collected 56 items
+collected 57 items
 
 backend\tests\api\test_auth_api.py::test_auth_full_lifecycle PASSED                  [ 1%]
 backend\tests\api\test_auth_api.py::test_inactive_account_rejection PASSED           [ 3%]
@@ -120,8 +120,9 @@ backend\tests\api\test_health.py::test_request_id_in_response_header PASSED     
 backend\tests\api\test_health.py::test_custom_request_id_propagated PASSED          [17%]
 backend\tests\api\test_health.py::test_security_headers_present PASSED               [19%]
 backend\tests\api\test_invoices_api.py::test_invoices_and_whatsapp_flow PASSED     [21%]
-backend\tests\api\test_orders_api.py::test_order_full_lifecycle_and_invariants PASSED [23%]
-backend\tests\api\test_payments_api.py::test_payments_api_full_flow PASSED          [25%]
+backend\tests\api\test_orders_api.py::test_order_full_lifecycle_and_invariants PASSED [22%]
+backend\tests\api\test_orders_api.py::test_order_completion_customer_pickup_flow PASSED [24%]
+backend\tests\api\test_payments_api.py::test_payments_api_full_flow PASSED          [26%]
 backend\tests\api\test_pickup_delivery_api.py::test_pickup_delivery_full_lifecycle PASSED [26%]
 backend\tests\api\test_rbac_and_users.py::test_rbac_user_management_and_settings PASSED [28%]
 backend\tests\api\test_reports_api.py::test_reports_reconciliation_and_lifecycle PASSED [30%]
@@ -165,7 +166,7 @@ backend\tests\unit\test_seed_dummy_data.py::test_seed_user_credentials_authentic
 backend\tests\unit\test_seed_dummy_data.py::test_seed_financial_and_pricing_invariants PASSED [98%]
 backend\tests\unit\test_seed_dummy_data.py::test_seed_delivery_tasks_type_constraints PASSED [100%]
 
-======================= 56 passed in 20.10s ========================
+======================= 57 passed in 25.60s ========================
 ```
 
 ---
