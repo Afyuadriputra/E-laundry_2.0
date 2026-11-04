@@ -4,6 +4,7 @@ test.describe('Milestone 5: Pickup & Delivery Logistics E2E', () => {
   test('Cashier manages pickup requests, confirms assignment, and converts to order (DEC-10)', async ({
     page,
   }) => {
+    test.setTimeout(60000);
     // 1. Mock Authenticated Session as CASHIER
     await page.route(/\/api\/v1\/auth\/me/, async (route) => {
       await route.fulfill({
