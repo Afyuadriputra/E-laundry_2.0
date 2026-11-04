@@ -41,7 +41,7 @@ The codebase is hardened, containerized, documented with an operational runbook,
 | **M1** | Argon2id auth, session tokens, CSRF protection, tenant configuration | 15 security & auth tests | **PASS (`AUTH_RBAC_READY`)** |
 | **M2** | Customers, service catalog, order intake, 7-stage state machine | 4 API + unit tests, 1 Playwright E2E | **PASS (`CORE_LAUNDRY_READY`)** |
 | **M3** | Payments, expenses, digital invoices, WhatsApp payload, invoice PDF | 5 API + unit tests, 1 Playwright E2E | **PASS (`FINANCE_INVOICE_READY`)** |
-| **M4** | Public order tracking, PII masking, token expiration, self-cancellation | 3 API tests, 1 Playwright E2E | **PASS (`PUBLIC_TRACKING_READY`)** |
+| **M4** | Public order tracking, PII masking, token expiration, read-only policy | 3 API tests, 1 Playwright E2E | **PASS (`PUBLIC_TRACKING_READY`)** |
 | **M5** | Public pickup intake, courier dispatch & workflow, DEC-10 atomic conversion | 2 API + unit tests, 2 Playwright E2E | **PASS (`PICKUP_DELIVERY_READY`)** |
 | **M6** | Owner & cashier dashboards, financial reconciliation, sanitized CSV export | 3 API tests, 2 Playwright E2E | **PASS (`REPORTING_READY`)** |
 | **M7** | Quality & security hardening, cross-tenant IDOR, 320px–1440px viewports, a11y | 43 Pytest + 15 Playwright E2E | **PASS (`RELEASE_CANDIDATE_READY`)** |
