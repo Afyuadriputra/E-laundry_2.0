@@ -68,9 +68,9 @@
 
 ## 3. Compliance Summary
 
-- **Total Requirements Audited:** 38 Core Functional & Non-Functional Items
-- **Pass (Verified via Automated Tests):** 34 Items (89.5%)
-- **Deployment Prepared (Artifacts Validated):** 4 Items (10.5%)
+- **Total Requirements Audited:** 39 Core Functional & Non-Functional Items
+- **Pass (Verified via Automated Real Tests):** 35 Items (89.7%)
+- **Deployment Prepared (Artifacts Validated, Host Lacks Docker CLI):** 4 Items (10.3%)
 - **Failed / Unremediated Gaps:** 0 Items (0.0%)
-- **Specification Adherence:** 100%
+- **Specification Adherence:** 100% (All 108 IPD tasks accounted for; see [TASK-ID-RECONCILIATION.md](TASK-ID-RECONCILIATION.md))
 
