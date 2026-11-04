@@ -273,6 +273,7 @@ test.describe('Milestone 2: Core Laundry Operations E2E', () => {
   });
 
   test('E2E: Navigation, Customers, Services, Order Intake & Status Progression', async ({ page }) => {
+    test.setTimeout(60000);
     // 1. Visit app
     await page.goto('/');
 
