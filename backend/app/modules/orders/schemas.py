@@ -67,6 +67,9 @@ class OrderStatusTransitionRequest(BaseModel):
     expected_version: int = Field(
         ..., description="Versi record saat dibaca untuk optimistic locking"
     )
+    received_by_name: str | None = Field(
+        default=None, description="Nama penerima fisik saat serah terima kasir/pelanggan"
+    )
 
 
 class OrderItemResponse(BaseModel):
