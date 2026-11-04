@@ -57,6 +57,9 @@ export const OrderDetailPage: React.FC<OrderDetailPageProps> = ({ orderId, onBac
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
   const [voidingPayment, setVoidingPayment] = useState<Payment | null>(null);
+  const [isHandoffModalOpen, setIsHandoffModalOpen] = useState(false);
+  const [handoffRecipient, setHandoffRecipient] = useState('');
+  const [handoffNotes, setHandoffNotes] = useState('');
 
   const fetchOrderDetail = async () => {
     try {
@@ -101,16 +104,21 @@ export const OrderDetailPage: React.FC<OrderDetailPageProps> = ({ orderId, onBac
     };
   }, [orderId]);
 
-  const handleTransition = async (nextStatus: OperationalStatus, reason?: string) => {
+  const handleTransition = async (
+    nextStatus: OperationalStatus,
+    reason?: string,
+    receivedByName?: string
+  ) => {
     if (!order) return;
     setActionError(null);
     setIsTransitioning(true);
 
     try {
-      const payload: OrderTransitionInput = {
+      const payload: OrderTransitionInput & { received_by_name?: string } = {
         to_status: nextStatus,
         reason: reason || `Transisi status ke ${nextStatus}`,
         expected_version: order.version,
+        received_by_name: receivedByName,
       };
 
       const res = await apiClient<ApiResponse<OrderDetail>>(`/orders/${orderId}/transition`, {
@@ -119,6 +127,8 @@ export const OrderDetailPage: React.FC<OrderDetailPageProps> = ({ orderId, onBac
       });
 
       setOrder(res.data);
+      setIsHandoffModalOpen(false);
+      await fetchOrderDetail();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Gagal mengubah status pengerjaan';
       setActionError(msg);
@@ -362,11 +372,30 @@ export const OrderDetailPage: React.FC<OrderDetailPageProps> = ({ orderId, onBac
             )}
 
             {order.operational_status === 'READY' && (
-              <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium w-full flex items-center justify-between">
-                <span>
-                  ✓ Cucian telah selesai dan siap di rak pengambilan kasir / diantar kurir.
-                  Penyelesaian status <strong>COMPLETED</strong> memerlukan pencatatan pelunasan nota dan konfirmasi serah terima fisik.
-                </span>
+              <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-medium w-full flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-1.5 font-bold text-emerald-900 text-sm">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    <span>Siap Serah Terima Cucian</span>
+                  </div>
+                  <p className="text-slate-600">
+                    Cucian telah selesai dan siap di rak pengambilan kasir atau siap diantar kurir.
+                  </p>
+                </div>
+                {isOwnerOrCashier && (
+                  <button
+                    onClick={() => {
+                      setHandoffRecipient(order.customer?.full_name || '');
+                      setHandoffNotes('');
+                      setIsHandoffModalOpen(true);
+                    }}
+                    disabled={isTransitioning}
+                    className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs min-h-[44px] shrink-0 shadow-sm flex items-center gap-1.5 cursor-pointer transition-all"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>7. Serah Terima & Selesai (COMPLETED)</span>
+                  </button>
+                )}
               </div>
             )}
 
@@ -513,7 +542,7 @@ export const OrderDetailPage: React.FC<OrderDetailPageProps> = ({ orderId, onBac
                   <button
                     type="button"
                     onClick={() => setIsPaymentModalOpen(true)}
-                    className="px-3.5 py-2 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-semibold text-xs min-h-[40px] flex items-center gap-1.5 shadow-sm transition-colors self-start sm:self-auto"
+                    className="px-3.5 py-2.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-semibold text-xs min-h-[44px] flex items-center gap-1.5 shadow-sm transition-colors self-start sm:self-auto"
                   >
                     <CreditCard className="w-3.5 h-3.5" />
                     <span>Catat Pembayaran</span>
@@ -723,6 +752,128 @@ export const OrderDetailPage: React.FC<OrderDetailPageProps> = ({ orderId, onBac
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Handoff / Complete Order Modal */}
+      {isHandoffModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                <h3 className="text-base font-bold text-slate-900">Serah Terima & Selesaikan</h3>
+              </div>
+              <button
+                onClick={() => setIsHandoffModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {paymentSummary && paymentSummary.remaining_amount > 0 ? (
+              <div className="space-y-4">
+                <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 space-y-2 text-xs">
+                  <p className="font-bold text-sm text-amber-800">
+                    ⚠️ Tagihan Belum Lunas
+                  </p>
+                  <p className="text-slate-700 leading-relaxed">
+                    Pesanan memiliki sisa tagihan sebesar{' '}
+                    <strong className="text-amber-800 font-mono">
+                      {formatRupiah(paymentSummary.remaining_amount)}
+                    </strong>
+                    . Sesuai SOP sistem, pesanan harus dilunasi terlebih dahulu sebelum diserahkan kepada pelanggan.
+                  </p>
+                </div>
+
+                <div className="pt-2 flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsHandoffModalOpen(false)}
+                    className="px-4 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 text-sm font-semibold min-h-[44px]"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsHandoffModalOpen(false);
+                      setIsPaymentModalOpen(true);
+                    }}
+                    className="px-5 py-2.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white text-sm font-semibold min-h-[44px] flex items-center gap-2 shadow-xs cursor-pointer"
+                  >
+                    <CreditCard className="w-4 h-4" />
+                    <span>Input Pembayaran Sekarang</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleTransition(
+                    'COMPLETED',
+                    handoffNotes.trim() || 'Serah terima pakaian langsung di outlet kasir',
+                    handoffRecipient.trim() || order.customer?.full_name || 'Pelanggan'
+                  );
+                }}
+                className="space-y-4"
+              >
+                <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs flex items-center justify-between">
+                  <span>Status Pembayaran:</span>
+                  <span className="font-bold text-emerald-700 flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Lunas
+                  </span>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Nama Penerima Pakaian <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={handoffRecipient}
+                    onChange={(e) => setHandoffRecipient(e.target.value)}
+                    placeholder="Contoh: Ibu Ratna (Pelanggan Langsung)"
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-600 min-h-[44px]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Catatan Serah Terima (Opsional)
+                  </label>
+                  <input
+                    type="text"
+                    value={handoffNotes}
+                    onChange={(e) => setHandoffNotes(e.target.value)}
+                    placeholder="Contoh: Diambil langsung oleh pemilik di rak 2..."
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-600 min-h-[44px]"
+                  />
+                </div>
+
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsHandoffModalOpen(false)}
+                    className="px-4 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 text-sm font-semibold min-h-[44px]"
+                  >
+                    Kembali
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isTransitioning || !handoffRecipient.trim()}
+                    className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold min-h-[44px] flex items-center gap-2 disabled:opacity-50 shadow-xs cursor-pointer"
+                  >
+                    {isTransitioning && <Loader2 className="w-4 h-4 animate-spin" />}
+                    <span>Konfirmasi Serah Terima (COMPLETED)</span>
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}
