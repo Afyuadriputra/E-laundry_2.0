@@ -12,18 +12,18 @@
 
 A comprehensive, evidence-driven documentation compliance audit, gap remediation, task ID reconciliation, and true browser-to-database end-to-end verification was conducted across all milestones (M0 through M8) of the E-Laundry 2.0 project.
 
-Prior milestone claims were systematically re-evaluated against real source code, live PostgreSQL 17 database migrations, security controls, concurrent transaction benchmarks, and unmocked browser flows. Nine verified findings (GAP-01 through GAP-09) were identified and remediated in-place to green status.
+Prior milestone claims were systematically re-evaluated against real source code, live PostgreSQL 17 database migrations, security controls, concurrent transaction benchmarks, and unmocked browser flows. Ten verified findings (GAP-01 through GAP-10) were identified and remediated in-place to green status.
 
 ### Summary Statistics
 - **Total Official IPD Tasks Mapped & Verified:** 108 / 108 (100% Traceability in `TASK-ID-RECONCILIATION.md`)
 - **Total Compliance Requirements Tracked:** 39 / 39 (35 PASS, 4 DEPLOYMENT_PREPARED)
-- **Pytest Automated Tests:** 56 Passed, 0 Failed (100% Pass Rate in 20.10s)
+- **Pytest Automated Tests:** 57 Passed, 0 Failed (100% Pass Rate in 25.60s)
 - **Real PostgreSQL 17 Dedicated Integration Tests:** 7 Passed, 0 Failed (`test_postgres_real.py` in 1.55s)
 - **True Browser-to-Database E2E Flows (Zero Mocks):** 4 Passed, 0 Failed (`real-browser-e2e.spec.ts` in 10.7s)
 - **Playwright Responsive Viewport & Component Tests:** 15 Passed, 0 Failed (100% Pass Rate across 6 workers in 22.7s)
 - **Code Linters & Static Analysis:**
   - Python / Backend: Ruff 0 errors, 0 warnings
-  - TypeScript / Frontend: ESLint 0 errors, 0 warnings; Vite clean build in 1.53s
+  - TypeScript / Frontend: ESLint 0 errors, 0 warnings; Vite clean build in 1.42s
 - **PostgreSQL Database Schema:** Exactly 19 BSD core tables registered with 7 sequential forward-migrating Alembic versions (revisions `3f9909dd433a` to `a619c28e401b`), live verified on PostgreSQL 17 with 36 FKs, 12 checks, 11 unique constraints, 61 indexes, and 652 seeded production-grade records.
 - **Accessibility & Touch Targets:** 100% compliance; all 16 sub-44px targets remediated to $\ge 44\text{ px}$.
 
@@ -58,6 +58,7 @@ Prior milestone claims were systematically re-evaluated against real source code
 | **GAP-07** | **P2** | UTC Midnight Boundary Sensitivity in Financial Reporting Test | Test orders offset by 8/12 hours crossed UTC midnight boundary | Adjusted relative timestamp offsets to minutes (`now - timedelta(minutes=20)`) | `test_reports_reconciliation_and_lifecycle` passes reliably 24/7 |
 | **GAP-08** | **P1** | Sub-44px Touch Targets on Mobile Layouts | 16 action elements had heights of 36px–40px | Enforced `min-h-[44px]` and minimum $44 \times 44\text{ px}$ tap targets across all mobile layouts | Playwright a11y tests passed; 0 sub-44px targets remain |
 | **GAP-09** | **P0** | Task ID & Requirements Reconciliation Discrepancy | Mismatch between 108 IPD tasks, 96 tracker rows, and 39 vs 38 matrix counter | Authored `TASK-ID-RECONCILIATION.md`, updated `MASTER-TRACKER.md` (108 tasks) and `FULL-COMPLIANCE-MATRIX.md` | Automated task ID extraction confirms 100% 1:1 correspondence |
+| **GAP-10** | **P1** | Missing Cashier Handoff Interface for Customer Pickup (BSD §33.1) | Order completion & handoff only wired for courier; cashier UI lacked button/modal and backend hardcoded unpaid check | Added `received_by_name`, automated `OrderHandoff` creation (`CUSTOMER_PICKUP`), step 7 button & modal with payment check | `test_order_completion_customer_pickup_flow` PASSED; full pytest suite (57 passed) |
 
 ---
 
@@ -108,7 +109,7 @@ Per the formal verification taxonomy of `task/task5.md`:
 | Verdict Tier | Status | Supporting Evidence Baseline |
 | :--- | :---: | :--- |
 | **IMPLEMENTATION_COMPLETE** | **YES** | All 108 official IPD tasks (M0–M8) fully implemented (`TASK-ID-RECONCILIATION.md`) |
-| **UNIT_AND_MOCK_TESTS_PASS** | **YES** | 56/56 Pytest tests passed; 15/15 Playwright component tests passed |
+| **UNIT_AND_MOCK_TESTS_PASS** | **YES** | 57/57 Pytest tests passed; 15/15 Playwright component tests passed |
 | **POSTGRESQL_INTEGRATION_VERIFIED** | **YES** | 7/7 Real PostgreSQL 17 integration tests passed (`POSTGRESQL-VERIFICATION-REPORT.md`) |
 | **REAL_E2E_VERIFIED** | **YES** | 4/4 Unmocked browser-to-database flows passed (`REAL-BROWSER-E2E-REPORT.md`) |
 | **DEPLOYMENT_PREPARED** | **YES** | Multi-stage Dockerfiles, Compose manifests, and backup scripts validated (`M8-REPORT.md`) |
