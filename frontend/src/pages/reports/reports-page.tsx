@@ -213,7 +213,7 @@ export const ReportsPage: React.FC = () => {
           <button
             onClick={loadReportData}
             disabled={isLoading}
-            className="inline-flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 min-h-[44px] transition-colors cursor-pointer"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
             <span>Segarkan</span>
@@ -347,7 +347,7 @@ export const ReportsPage: React.FC = () => {
                     <button
                       onClick={() => handleExport('payments')}
                       disabled={isExporting}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 min-h-[44px] transition-colors cursor-pointer"
                     >
                       <Download className="w-3.5 h-3.5" />
                       <span>Unduh CSV Pembayaran</span>
@@ -373,7 +373,7 @@ export const ReportsPage: React.FC = () => {
                     <button
                       onClick={() => handleExport('expenses')}
                       disabled={isExporting}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 min-h-[44px] transition-colors cursor-pointer"
                     >
                       <Download className="w-3.5 h-3.5" />
                       <span>Unduh CSV Pengeluaran</span>
@@ -601,7 +601,7 @@ export const ReportsPage: React.FC = () => {
                       }%20tersisa%20Rp%20${item.remaining_amount.toLocaleString('id-ID')}.%20Terima%20kasih!`}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-colors"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 min-h-[44px] transition-colors"
                     >
                       <Phone className="w-3.5 h-3.5" />
                       <span>Ingatkan via WA</span>
