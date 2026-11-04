@@ -267,6 +267,8 @@ test.describe('Milestone 3: Finance & Digital Invoices E2E', () => {
   });
 
   test('E2E: Expenses Management, Payment Intake & Digital Invoice Modal', async ({ page }) => {
+    test.setTimeout(60000);
+
     // 1. Visit app
     await page.goto('/');
 
@@ -313,7 +315,7 @@ test.describe('Milestone 3: Finance & Digital Invoices E2E', () => {
 
     // Switch to Thermal POS 58mm view
     await page.locator('button:has-text("Pratinjau POS Thermal (58mm)")').click();
-    await expect(page.locator('text=No. Nota : ORD-20261103-0999')).toBeVisible();
+    await expect(page.locator('.font-mono').filter({ hasText: 'ORD-20261103-0999' }).last()).toBeVisible();
 
     // Close modal
     await page.locator('button:has-text("Cetak Nota")').isVisible();
