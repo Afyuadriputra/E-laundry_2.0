@@ -31,7 +31,7 @@ All 14 task items (M7-01 through M7-14) have met or exceeded their acceptance ga
   - `test_rbac_and_users.py`: Role hierarchies (`OWNER`, `CASHIER`, `STAFF`, `COURIER`), privilege escalation rejection.
   - `test_reports_api.py`: Operational & financial reconciliations, payment void exclusion, formula injection sanitization.
   - `test_services_api.py`: Catalog CRUD, role-gating (`OWNER` only).
-  - `test_tracking_api.py`: Public order tracking, PII masking, status stepper, and self-cancellation.
+  - `test_tracking_api.py`: Public order tracking, PII masking, status stepper, and read-only enforcement (GAP-02).
   - `test_argon2.py`: Argon2id parameters (`time_cost=3`, `memory_cost=65536`, `parallelism=4`), unique cryptographic salts.
   - `test_login_throttling.py`: 5-attempt brute-force rate limit lockout.
   - `test_security_hardening.py`: Cross-tenant data isolation, CSRF token requirement on all state-mutating HTTP methods, token guessing rejection.
@@ -55,7 +55,7 @@ All 14 task items (M7-01 through M7-14) have met or exceeded their acceptance ga
 - **Specifications:**
   - `m2-core-laundry.spec.ts`: Customer management, service catalog, order creation, and status progression.
   - `m3-finance.spec.ts`: Expense tracking, payment intake, and digital invoice modal.
-  - `m4-tracking.spec.ts`: Public customer tracking view, PII masking, progress stepper, self-cancellation.
+  - `m4-tracking.spec.ts`: Public customer tracking view, PII masking, progress stepper, read-only cashier assistance.
   - `m5-delivery.spec.ts`: Pickup request review, courier dispatch, courier mobile status update, and cashier DEC-10 atomic order conversion.
   - `m6-reports.spec.ts`: Financial summary, cash flow reconciliation, orders ledger, outstanding balances, CSV export, and role-gated cashier dashboard.
   - `m7-responsive-a11y.spec.ts`: Responsive audit across 5 key viewports (320px, 375px, 430px, 768px, 1440px), touch target sizes (≥44px), and accessibility.
