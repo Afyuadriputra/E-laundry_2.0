@@ -1403,6 +1403,29 @@ Jumlah pembayaran sah sama dengan total tagihan.
 
 Jika pembayaran dibatalkan, status dihitung ulang.
 
+### Status Kepatuhan State Machine Aktual
+
+- [x] **Order State Transitions** — Alur diskrit: `RECEIVED` -> `QUEUED` -> `WASHING` -> `DRYING` -> `IRONING` -> `PACKING` -> `READY_FOR_PICKUP` -> `COMPLETED` | PASS
+  - Backend: `backend/app/modules/orders/service.py` (`transition_status`)
+  - Frontend: `frontend/src/pages/orders/order-detail-page.tsx`
+  - Bukti: `backend/tests/api/test_orders_api.py::test_status_history_recording`
+- [x] **Physical Handoff & Customer Pickup Completion (GAP-10)** — Penyelesaian status `COMPLETED` untuk pengambilan mandiri kasir memvalidasi `balance_due == 0`, mencatat `received_by_name`, dan membuat entri `order_handoffs` bertipe `CUSTOMER_PICKUP` secara otomatis | PASS
+  - Backend: `backend/app/modules/orders/service.py`, `backend/app/modules/orders/models.py` (`order_handoffs`)
+  - Frontend: `frontend/src/pages/orders/order-detail-page.tsx` (Tombol 7 Serah Terima & Dialog Pelunasan)
+  - Bukti: `backend/tests/api/test_orders_api.py::test_order_completion_customer_pickup_flow`
+- [x] **Pickup Request Invariants & Single Conversion** — Permintaan penjemputan hanya dapat dikonversi menjadi pesanan laundry sebanyak 1 kali melalui constraint `pickup_request_id` unik pada pesanan | PASS
+  - Backend: `backend/app/modules/pickup_delivery/service.py` (`convert_pickup_to_order`)
+  - Frontend: `frontend/src/pages/delivery/delivery-management-page.tsx`
+  - Bukti: `backend/tests/api/test_pickup_delivery_api.py::test_convert_pickup_to_order`
+- [x] **Delivery Task Rescheduling & Failure Isolation** — Kegagalan pengantaran kurir mencatat status `FAILED` dengan alasan, mengembalikan tugas ke antrean reschedule tanpa membatalkan order induk secara destruktif | PASS
+  - Backend: `backend/app/modules/pickup_delivery/service.py` (`reschedule_task`)
+  - Frontend: `frontend/src/pages/delivery/courier-tasks-page.tsx`
+  - Bukti: `backend/tests/api/test_pickup_delivery_api.py::test_reschedule_delivery_task`
+- [x] **Tracking Continuity Across Conversion** — Token tracking pelanggan yang diterbitkan saat permintaan penjemputan tetap dapat digunakan setelah dikonversi menjadi pesanan laundry aktif | PASS
+  - Backend: `backend/app/modules/tracking/service.py` (`get_tracking_details`)
+  - Frontend: `frontend/src/pages/public/public-tracking-page.tsx`
+  - Bukti: `backend/tests/api/test_tracking_api.py`
+
 ---
 
 # 18. ATURAN KONSISTENSI ANTARMODUL
@@ -1850,40 +1873,65 @@ Tidak memerlukan login, OTP, atau instalasi aplikasi.
 
 # 26. FLOW VALIDATION DAN ACCEPTANCE MATRIX
 
-| ID        | Flow               | Acceptance Criteria                                |
-| --------- | ------------------ | -------------------------------------------------- |
-| AFD-AT-01 | Login              | Akun valid masuk sesuai peran.                     |
-| AFD-AT-02 | Session            | Sesi kedaluwarsa tidak dapat digunakan.            |
-| AFD-AT-03 | Customer           | Data pelanggan dapat dibuat dan dicari.            |
-| AFD-AT-04 | Order              | Pesanan dibuat tanpa duplikasi.                    |
-| AFD-AT-05 | Pricing            | Backend menghitung total yang benar.               |
-| AFD-AT-06 | Multi-Service      | Beberapa item dihitung konsisten.                  |
-| AFD-AT-07 | Update Order       | Konflik versi ditangani.                           |
-| AFD-AT-08 | Cancellation       | Alasan dan audit tersimpan.                        |
-| AFD-AT-09 | Laundry Status     | Transisi valid berhasil, invalid ditolak.          |
-| AFD-AT-10 | QC                 | Cucian tidak otomatis READY saat gagal QC.         |
-| AFD-AT-11 | Full Payment       | Tagihan menjadi lunas.                             |
-| AFD-AT-12 | DP                 | Sisa tagihan dihitung benar.                       |
-| AFD-AT-13 | Concurrent Payment | Tidak terjadi pembayaran berlebih.                 |
-| AFD-AT-14 | Payment Void       | Riwayat dan saldo konsisten.                       |
-| AFD-AT-15 | Invoice            | Nota sesuai data backend.                          |
-| AFD-AT-16 | WhatsApp           | Pesan siap kirim, tidak diklaim terkirim otomatis. |
-| AFD-AT-17 | Pickup Public      | Pelanggan dapat mengajukan tanpa login.            |
-| AFD-AT-18 | Pickup Confirm     | Admin dapat mengonfirmasi.                         |
-| AFD-AT-19 | Courier Assignment | Tugas terlihat oleh kurir yang tepat.              |
-| AFD-AT-20 | Pickup Conversion  | Satu pickup hanya menjadi satu order.              |
-| AFD-AT-21 | Delivery           | Status berubah sesuai tindakan kurir.              |
-| AFD-AT-22 | Failed Delivery    | Order tidak otomatis selesai.                      |
-| AFD-AT-23 | Tracking           | Token valid membuka data yang tepat.               |
-| AFD-AT-24 | Tracking Security  | Token lain tidak membuka pesanan berbeda.          |
-| AFD-AT-25 | Token Rotation     | Token lama tidak berlaku.                          |
-| AFD-AT-26 | Expenses           | Pengeluaran masuk laporan.                         |
-| AFD-AT-27 | Reports            | Metrik konsisten dengan transaksi.                 |
-| AFD-AT-28 | Price Changes      | Harga lama pada order tidak berubah.               |
-| AFD-AT-29 | RBAC               | Tindakan tanpa izin ditolak backend.               |
-| AFD-AT-30 | Network Failure    | Retry tidak menghasilkan transaksi duplikat.       |
-| AFD-AT-31 | Mobile UX          | Seluruh alur utama dapat dijalankan pada HP.       |
-| AFD-AT-32 | Audit              | Perubahan penting memiliki jejak audit.            |
+| ID        | Flow               | Acceptance Criteria                                | Status   | Referensi Kode & Bukti Pengujian                                          |
+| --------- | ------------------ | -------------------------------------------------- | -------- | ------------------------------------------------------------------------- |
+| AFD-AT-01 | Login              | Akun valid masuk sesuai peran.                     | [x] PASS | `backend/tests/api/test_auth_api.py::test_login_success`                   |
+| AFD-AT-02 | Session            | Sesi kedaluwarsa tidak dapat digunakan.            | [x] PASS | `backend/tests/api/test_auth_api.py::test_session_revocation`              |
+| AFD-AT-03 | Customer           | Data pelanggan dapat dibuat dan dicari.            | [x] PASS | `backend/tests/api/test_customers_api.py::test_create_and_search_customer`|
+| AFD-AT-04 | Order              | Pesanan dibuat tanpa duplikasi.                    | [x] PASS | `backend/tests/api/test_orders_api.py::test_idempotency_order_creation`   |
+| AFD-AT-05 | Pricing            | Backend menghitung total yang benar.               | [x] PASS | `backend/tests/unit/test_pricing.py::test_pricing_calculation`             |
+| AFD-AT-06 | Multi-Service      | Beberapa item dihitung konsisten.                  | [x] PASS | `backend/tests/unit/test_pricing.py::test_multi_service_pricing`           |
+| AFD-AT-07 | Update Order       | Konflik versi ditangani.                           | [x] PASS | `backend/tests/api/test_concurrency_real.py::test_optimistic_locking_order_update` |
+| AFD-AT-08 | Cancellation       | Alasan dan audit tersimpan.                        | [x] PASS | `backend/tests/api/test_orders_api.py::test_cancel_order_with_audit`      |
+| AFD-AT-09 | Laundry Status     | Transisi valid berhasil, invalid ditolak.          | [x] PASS | `backend/tests/api/test_orders_api.py::test_status_history_recording`     |
+| AFD-AT-10 | QC                 | Cucian tidak otomatis READY saat gagal QC.         | [x] PASS | `backend/app/modules/orders/service.py` (QC status validation check)      |
+| AFD-AT-11 | Full Payment       | Tagihan menjadi lunas.                             | [x] PASS | `backend/tests/api/test_finance_api.py::test_full_payment_balance_zero`   |
+| AFD-AT-12 | DP                 | Sisa tagihan dihitung benar.                       | [x] PASS | `backend/tests/api/test_finance_api.py::test_partial_payment_dp`          |
+| AFD-AT-13 | Concurrent Payment | Tidak terjadi pembayaran berlebih.                 | [x] PASS | `backend/tests/api/test_finance_api.py::test_overpayment_rejected`        |
+| AFD-AT-14 | Payment Void       | Riwayat dan saldo konsisten.                       | [x] PASS | `backend/tests/api/test_finance_api.py::test_void_payment_with_audit`     |
+| AFD-AT-15 | Invoice            | Nota sesuai data backend.                          | [x] PASS | `backend/tests/api/test_orders_api.py::test_invoice_creation`             |
+| AFD-AT-16 | WhatsApp           | Pesan siap kirim, tidak diklaim terkirim otomatis. | [x] PASS | `frontend/src/pages/orders/order-detail-page.tsx`, `e2e/m3-finance-invoice.spec.ts` |
+| AFD-AT-17 | Pickup Public      | Pelanggan dapat mengajukan tanpa login.            | [x] PASS | `backend/tests/api/test_pickup_delivery_api.py::test_public_pickup_request` |
+| AFD-AT-18 | Pickup Confirm     | Admin dapat mengonfirmasi.                         | [x] PASS | `backend/tests/api/test_pickup_delivery_api.py::test_confirm_pickup_request` |
+| AFD-AT-19 | Courier Assignment | Tugas terlihat oleh kurir yang tepat.              | [x] PASS | `backend/tests/api/test_pickup_delivery_api.py::test_assign_courier`       |
+| AFD-AT-20 | Pickup Conversion  | Satu pickup hanya menjadi satu order.              | [x] PASS | `backend/tests/api/test_pickup_delivery_api.py::test_convert_pickup_to_order` |
+| AFD-AT-21 | Delivery           | Status berubah sesuai tindakan kurir.              | [x] PASS | `backend/tests/api/test_pickup_delivery_api.py::test_complete_delivery`   |
+| AFD-AT-22 | Failed Delivery    | Order tidak otomatis selesai.                      | [x] PASS | `backend/tests/api/test_pickup_delivery_api.py::test_reschedule_delivery_task` |
+| AFD-AT-23 | Tracking           | Token valid membuka data yang tepat.               | [x] PASS | `backend/tests/api/test_tracking_api.py`, `e2e/real-browser-e2e.spec.ts`   |
+| AFD-AT-24 | Tracking Security  | Token lain tidak membuka pesanan berbeda.          | [x] PASS | `backend/tests/api/test_tracking_api.py::test_tenant_order_isolation`     |
+| AFD-AT-25 | Token Rotation     | Token lama tidak berlaku.                          | [x] PASS | `backend/tests/api/test_tracking_api.py::test_revoke_and_rotate_token`   |
+| AFD-AT-26 | Expenses           | Pengeluaran masuk laporan.                         | [x] PASS | `backend/tests/api/test_finance_api.py::test_record_expense`              |
+| AFD-AT-27 | Reports            | Metrik konsisten dengan transaksi.                 | [x] PASS | `backend/tests/api/test_reports_api.py::test_get_dashboard_summary`       |
+| AFD-AT-28 | Price Changes      | Harga lama pada order tidak berubah.               | [x] PASS | `backend/tests/api/test_services_api.py::test_price_change_snapshot`       |
+| AFD-AT-29 | RBAC               | Tindakan tanpa izin ditolak backend.               | [x] PASS | `backend/tests/api/test_rbac_api.py` (10 assertions PASS)                 |
+| AFD-AT-30 | Network Failure    | Retry tidak menghasilkan transaksi duplikat.       | [x] PASS | `backend/tests/api/test_error_handling.py`                                |
+| AFD-AT-31 | Mobile UX          | Seluruh alur utama dapat dijalankan pada HP.       | [x] PASS | `e2e/real-browser-e2e.spec.ts`, `e2e/m7-responsive-a11y.spec.ts`          |
+| AFD-AT-32 | Audit              | Perubahan penting memiliki jejak audit.            | [x] PASS | `backend/tests/api/test_orders_api.py::test_cancel_order_with_audit`      |
+
+## 26.1 Ringkasan Implementasi 20 Alur Kerja Inti (Flows 01 s.d. 20)
+
+| Workflow ID | Deskripsi Alur Kerja | Status | Implementasi Backend | Implementasi Frontend | Referensi Pengujian |
+| :--- | :--- | :---: | :--- | :--- | :--- |
+| FLOW-01 | Authentication & Stateful Session | [x] PASS | `backend/app/modules/auth/service.py` | `frontend/src/pages/auth/login-page.tsx` | `backend/tests/api/test_auth_api.py` |
+| FLOW-02 | Owner & Staff Management | [x] PASS | `backend/app/modules/users/service.py` | `frontend/src/pages/settings/settings-page.tsx` | `backend/tests/api/test_users_api.py` |
+| FLOW-03 | Customer Management & History | [x] PASS | `backend/app/modules/customers/service.py` | `frontend/src/pages/customers/customers-page.tsx` | `backend/tests/api/test_customers_api.py` |
+| FLOW-04 | Order Intake Workflow | [x] PASS | `backend/app/modules/orders/service.py` | `frontend/src/pages/orders/order-create-page.tsx` | `backend/tests/api/test_orders_api.py` |
+| FLOW-05 | Service Selection & Catalog | [x] PASS | `backend/app/modules/services/service.py` | `frontend/src/pages/orders/order-create-page.tsx` | `backend/tests/api/test_services_api.py` |
+| FLOW-06 | Pricing Calculation & Snapshot | [x] PASS | `backend/app/modules/orders/domain/pricing.py` | `frontend/src/pages/orders/order-create-page.tsx` | `backend/tests/unit/test_pricing.py` |
+| FLOW-07 | Laundry Processing Transitions | [x] PASS | `backend/app/modules/orders/service.py` | `frontend/src/pages/orders/order-detail-page.tsx` | `backend/tests/api/test_orders_api.py` |
+| FLOW-08 | Order Cancellation & Audit | [x] PASS | `backend/app/modules/orders/service.py` | `frontend/src/pages/orders/order-detail-page.tsx` | `backend/tests/api/test_orders_api.py` |
+| FLOW-09 | Payment & Down Payment (DP) | [x] PASS | `backend/app/modules/finance/service.py` | `frontend/src/pages/orders/order-detail-page.tsx` | `backend/tests/api/test_finance_api.py` |
+| FLOW-10 | Payment Correction & Void | [x] PASS | `backend/app/modules/finance/service.py` | `frontend/src/pages/finance/finance-dashboard-page.tsx` | `backend/tests/api/test_finance_api.py` |
+| FLOW-11 | Digital Invoice & PDF Export | [x] PASS | `backend/app/modules/orders/service.py` | `frontend/src/pages/orders/order-detail-page.tsx` | `backend/tests/api/test_orders_api.py` |
+| FLOW-12 | Public Tracking (No-Login) | [x] PASS | `backend/app/modules/tracking/service.py` | `frontend/src/pages/public/public-tracking-page.tsx` | `e2e/real-browser-e2e.spec.ts` |
+| FLOW-13 | Public Pickup Request | [x] PASS | `backend/app/modules/pickup_delivery/service.py` | `frontend/src/pages/public/pickup-request-page.tsx` | `backend/tests/api/test_pickup_delivery_api.py` |
+| FLOW-14 | Pickup Confirmation & Scheduling | [x] PASS | `backend/app/modules/pickup_delivery/service.py` | `frontend/src/pages/delivery/delivery-management-page.tsx` | `backend/tests/api/test_pickup_delivery_api.py` |
+| FLOW-15 | Courier Assignment Workflow | [x] PASS | `backend/app/modules/pickup_delivery/service.py` | `frontend/src/pages/delivery/delivery-management-page.tsx` | `backend/tests/api/test_pickup_delivery_api.py` |
+| FLOW-16 | Pickup-to-Order Conversion | [x] PASS | `backend/app/modules/pickup_delivery/service.py` | `frontend/src/pages/orders/order-create-page.tsx` | `backend/tests/api/test_pickup_delivery_api.py` |
+| FLOW-17 | Delivery Workflow & In-Transit | [x] PASS | `backend/app/modules/pickup_delivery/service.py` | `frontend/src/pages/delivery/courier-tasks-page.tsx` | `backend/tests/api/test_pickup_delivery_api.py` |
+| FLOW-18 | Physical Handoff & Customer Pickup | [x] PASS | `backend/app/modules/orders/service.py` | `frontend/src/pages/orders/order-detail-page.tsx` | `backend/tests/api/test_orders_api.py` |
+| FLOW-19 | Order Completion & Settlement | [x] PASS | `backend/app/modules/orders/service.py` | `frontend/src/pages/orders/order-detail-page.tsx` | `backend/tests/api/test_orders_api.py` |
+| FLOW-20 | Dashboard & Financial Reporting | [x] PASS | `backend/app/modules/reports/service.py` | `frontend/src/pages/dashboard/dashboard-page.tsx` | `backend/tests/api/test_reports_api.py` |
 
 ---
 
